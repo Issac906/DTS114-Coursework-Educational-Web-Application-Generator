@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  flask-app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "5005:5005"
+    volumes:
+      - ./flask:/app
