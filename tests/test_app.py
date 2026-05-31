@@ -39,3 +39,23 @@ def test_manual_plan_endpoint_saves_student_entries():
     assert plan["total_planned_hours"] == 7
     assert len(plan["weekly_plan"]) == 2
     assert plan["weekly_plan"][0]["task"] == "Review AI concepts"
+
+
+def test_ai_advice_endpoint_uses_selected_courses(monkeypatch):
+    module = load_app_module()
+    monkeypatch.setattr(module, "request_ai_advice", lambda profile, courses: f"Study {courses[0]['title']} first.")
+    client = module.app.test_client()
+    response = client.post("/api/advice", json={
+        "course_ids": ["ai-foundations"],
+        "student_profile": {"name": "Test Student", "goal": "start learning AI"},
+    })
+    assert response.status_code == 200
+    assert response.get_json()["source"] == "APIFree API"
+    assert "AI Foundations" in response.get_json()["advice"]
+
+
+def test_ai_advice_endpoint_requires_course_selection():
+    module = load_app_module()
+    client = module.app.test_client()
+    response = client.post("/api/advice", json={"course_ids": []})
+    assert response.status_code == 400

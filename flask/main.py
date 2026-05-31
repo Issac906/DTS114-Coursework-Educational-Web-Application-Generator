@@ -1,5 +1,7 @@
+import json
 import os
 import sys
+import urllib.request
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -7,14 +9,16 @@ from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
+PROJECT_ROOT = Path(__file__).resolve().parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 
 def load_env_file():
-    env_path = PROJECT_ROOT / ".env"
-    if not env_path.exists():
+    candidates = [PROJECT_ROOT / ".env", Path.cwd() / ".env"]
+    candidates.extend(parent / ".env" for parent in PROJECT_ROOT.parents)
+    env_path = next((path for path in candidates if path.exists()), None)
+    if not env_path:
         return
     for raw in env_path.read_text(encoding="utf-8").splitlines():
         line = raw.strip()
@@ -171,6 +175,7 @@ COURSES = [
     }
 ]
 PLANS = []
+ADVICE_MODEL = os.getenv("APIFREE_TEXT_MODEL", "openai/gpt-5.2")
 
 
 def selected_courses(course_ids):
@@ -202,6 +207,48 @@ def build_plan_payload(student_profile, course_ids, manual_entries):
         "total_planned_hours": sum(item["hours"] for item in weekly_plan),
         "weekly_plan": weekly_plan,
     }
+
+
+def request_ai_advice(student_profile, courses):
+    api_key = os.getenv("APIFREE_API_KEY")
+    if not api_key:
+        raise RuntimeError("APIFREE_API_KEY is not configured on the server")
+    course_summary = "\n".join(
+        f"- {course['title']} ({course['level']}, {course['weeks']} weeks): {course['description']}"
+        for course in courses
+    )
+    prompt = f"""You are an academic advisor for AI education.
+Create a concise study-plan suggestion for the learner below.
+Use only the selected courses. Recommend a sensible order and practical weekly focus.
+The suggestion is advisory: remind the learner to adjust it to their available time.
+
+Learner name: {student_profile.get("name") or "Student"}
+Learner goal: {student_profile.get("goal") or "Build AI knowledge"}
+Selected courses:
+{course_summary}
+"""
+    base_url = os.getenv("APIFREE_API_BASE", "https://api.apifree.ai").rstrip("/")
+    payload = {
+        "model": ADVICE_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.3,
+        "max_tokens": 1200,
+    }
+    req = urllib.request.Request(
+        f"{base_url}/v1/chat/completions",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=120) as response:
+        data = json.loads(response.read().decode("utf-8"))
+    choices = data.get("choices") or data.get("resp_data", {}).get("choices") or []
+    content = choices[0].get("message", {}).get("content", "") if choices else ""
+    if isinstance(content, list):
+        content = "".join(part.get("text", "") if isinstance(part, dict) else str(part) for part in content)
+    if not str(content).strip():
+        raise RuntimeError("APIFree returned an empty AI suggestion")
+    return str(content).strip()
 
 
 @app.get("/health")
@@ -254,6 +301,23 @@ def get_plan(plan_id):
     return jsonify({"plan": plan})
 
 
+@app.post("/api/advice")
+def create_ai_advice():
+    data = request.get_json(silent=True) or {}
+    profile = data.get("student_profile") or {}
+    course_ids = data.get("course_ids") or []
+    if not isinstance(course_ids, list) or not course_ids:
+        return jsonify({"error": "select at least one course before requesting AI advice"}), 400
+    courses = selected_courses(course_ids)
+    if not courses:
+        return jsonify({"error": "no valid course ids were provided"}), 400
+    try:
+        advice = request_ai_advice(profile, courses)
+    except Exception as exc:
+        return jsonify({"error": f"AI advice is temporarily unavailable: {exc}"}), 503
+    return jsonify({"advice": advice, "model": ADVICE_MODEL, "source": "APIFree API"})
+
+
 @app.get("/")
 def index():
     return send_from_directory(".", "index.html")
@@ -265,4 +329,4 @@ def serve_static_file(filename):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5005, debug=True)
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5005")), debug=False)
