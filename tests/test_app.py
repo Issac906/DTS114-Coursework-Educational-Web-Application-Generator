@@ -59,3 +59,13 @@ def test_ai_advice_endpoint_requires_course_selection():
     client = module.app.test_client()
     response = client.post("/api/advice", json={"course_ids": []})
     assert response.status_code == 400
+
+
+def test_edgeone_function_exposes_serverless_api_routes():
+    app_path = pathlib.Path(__file__).resolve().parents[1] / "cloud-functions" / "api" / "[[default]].py"
+    spec = importlib.util.spec_from_file_location("edgeone_generated_app", app_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    client = module.app.test_client()
+    assert client.get("/courses").get_json()["count"] >= 8
+    assert client.post("/advice", json={"course_ids": []}).status_code == 400

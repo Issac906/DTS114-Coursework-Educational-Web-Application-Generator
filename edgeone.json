@@ -1,0 +1,8 @@
+{
+  "cloudFunctions": {
+    "python": {
+      "maxDuration": 120
+    },
+    "mainlandRegions": ["ap-guangzhou"]
+  }
+}
