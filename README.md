@@ -3,7 +3,11 @@
 AI Learning Planner is an educational web application for students who want to build practical knowledge in artificial intelligence.
 
 ## Website
-[Open AI Learning Planner](https://ai-learning-planner.com)
+[Open AI Learning Planner](https://ai-learning-planner.zh-cn.edgeone.cool)
+
+## Important Notice
+The deployed website has been tested and operates normally under standard internet conditions. However, access may be restricted in certain network environments due to external network policies.
+If the website cannot be reached, please try accessing it through an alternative public internet connection.
 
 ## What You Can Do
 - Browse a curated library of AI-related courses.
