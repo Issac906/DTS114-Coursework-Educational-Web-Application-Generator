@@ -3,7 +3,7 @@ on:
   push:
   pull_request:
 jobs:
-  test-and-build:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -18,5 +18,11 @@ jobs:
           pip install -r flask/requirements.txt pytest
       - name: Run API tests
         run: pytest tests
+  docker-build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Verify Docker build
         run: docker build -t ai-learning-planner -f docker/Dockerfile .

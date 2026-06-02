@@ -8,6 +8,7 @@ Run with `python main.py` and open http://127.0.0.1:5005.
 - `POST /api/plans`
 - `GET /api/plans`
 - `GET /api/plans/<plan_id>`
+- `POST /api/plans/<plan_id>/submit`
 - `POST /api/advice`
 
 The optional AI advice endpoint requires `APIFREE_API_KEY` in the server environment. Never expose this key in frontend code or commit it to GitHub.

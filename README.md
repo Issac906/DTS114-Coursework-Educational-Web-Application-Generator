@@ -3,11 +3,7 @@
 AI Learning Planner is an educational web application for students who want to build practical knowledge in artificial intelligence.
 
 ## Website
-[Open AI Learning Planner](https://ai-learning-planner.zh-cn.edgeone.cool)
-
-## Important Notice
-The deployed website has been tested and operates normally under standard internet conditions. However, access may be restricted in certain network environments due to external network policies.
-If the website cannot be reached, please try accessing it through an alternative public internet connection.
+[Open AI Learning Planner](https://ai-learning-planner.com)
 
 ## What You Can Do
 - Browse a curated library of AI-related courses.
@@ -17,6 +13,7 @@ If the website cannot be reached, please try accessing it through an alternative
 - Enter your own learning goal.
 - Request an optional AI-generated study-plan suggestion.
 - Build your own weekly study plan manually.
+- Submit a saved learning plan to an Academic Advisor.
 - Review the total number of study hours in your saved plan.
 
 ## Course Library
@@ -41,6 +38,7 @@ The application includes essential AI learning topics:
 5. Select `Generate AI Suggestion` if you want an optional suggested learning order.
 6. Add your own weekly plan items, including the week, course, study hours, and task.
 7. Select `Save My Plan` to review your schedule and total planned study time.
+8. Select `Submit Plan to Academic Advisor` if you want to request advisor review.
 
 ## AI Study Suggestions
 AI-generated suggestions are optional. They are intended to help you consider a possible learning order and weekly focus. You should adjust the final plan based on your own available time, background, and learning priorities.

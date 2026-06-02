@@ -61,6 +61,24 @@ def test_ai_advice_endpoint_requires_course_selection():
     assert response.status_code == 400
 
 
+def test_saved_plan_can_be_submitted_to_academic_advisor():
+    module = load_app_module()
+    client = module.app.test_client()
+    response = client.post("/api/plans", json={
+        "course_ids": ["ai-foundations"],
+        "student_profile": {"name": "Test Student", "goal": "start AI"},
+        "manual_entries": [
+            {"week": 1, "course_id": "ai-foundations", "hours": 3, "task": "Review concepts"},
+        ],
+    })
+    plan = response.get_json()["plan"]
+    assert plan["advisor_submission"]["status"] == "draft"
+    submitted = client.post(f"/api/plans/{plan['id']}/submit")
+    assert submitted.status_code == 200
+    assert submitted.get_json()["plan"]["advisor_submission"]["status"] == "submitted"
+    assert submitted.get_json()["plan"]["advisor_submission"]["submitted_at"]
+
+
 def test_edgeone_function_exposes_serverless_api_routes():
     app_path = pathlib.Path(__file__).resolve().parents[1] / "cloud-functions" / "api" / "[[default]].py"
     spec = importlib.util.spec_from_file_location("edgeone_generated_app", app_path)

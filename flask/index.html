@@ -62,7 +62,7 @@
     <section class="results" id="results"><h2>Saved Plan</h2><p>Select courses and create your own weekly plan.</p></section>
   </main>
   <script>
-    const state = { courses: [], selected: new Set(), manualEntries: [] };
+    const state = { courses: [], selected: new Set(), manualEntries: [], savedPlanId: null };
     const $ = id => document.getElementById(id);
     async function loadCourses() {
       const res = await fetch('/api/courses');
@@ -103,7 +103,16 @@
       const data = await res.json();
       if (!res.ok) { $('results').innerHTML = `<h2>Saved Plan</h2><p>${data.error}</p>`; return; }
       const plan = data.plan;
-      $('results').innerHTML = `<h2>Saved Plan</h2><p><strong>Total planned time:</strong> ${plan.total_planned_hours} hours</p>${plan.weekly_plan.map(item => `<div class="week"><h3>Week ${item.week}: ${item.title}</h3><p>${item.hours} hours</p><p>${item.task}</p></div>`).join('')}`;
+      state.savedPlanId = plan.id;
+      $('results').innerHTML = `<h2>Saved Plan</h2><p><strong>Total planned time:</strong> ${plan.total_planned_hours} hours</p>${plan.weekly_plan.map(item => `<div class="week"><h3>Week ${item.week}: ${item.title}</h3><p>${item.hours} hours</p><p>${item.task}</p></div>`).join('')}<button id="submitAdvisor">Submit Plan to Academic Advisor</button><p id="submissionStatus"></p>`;
+      $('submitAdvisor').addEventListener('click', submitToAdvisor);
+    }
+    async function submitToAdvisor() {
+      if (!state.savedPlanId) return;
+      const res = await fetch(`/api/plans/${state.savedPlanId}/submit`, { method: 'POST' });
+      const data = await res.json();
+      $('submissionStatus').textContent = res.ok ? data.message : data.error;
+      if (res.ok) $('submitAdvisor').disabled = true;
     }
     async function requestAdvice() {
       const body = { course_ids: [...state.selected], student_profile: { name: $('name').value, goal: $('goal').value } };

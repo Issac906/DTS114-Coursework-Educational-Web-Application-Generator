@@ -206,6 +206,7 @@ def build_plan_payload(student_profile, course_ids, manual_entries):
         "courses": courses,
         "total_planned_hours": sum(item["hours"] for item in weekly_plan),
         "weekly_plan": weekly_plan,
+        "advisor_submission": {"status": "draft", "submitted_at": None},
     }
 
 
@@ -299,6 +300,18 @@ def get_plan(plan_id):
     if not plan:
         return jsonify({"error": "plan not found"}), 404
     return jsonify({"plan": plan})
+
+
+@app.post("/plans/<plan_id>/submit")
+def submit_plan_to_advisor(plan_id):
+    plan = next((item for item in PLANS if item["id"] == plan_id), None)
+    if not plan:
+        return jsonify({"error": "plan not found"}), 404
+    plan["advisor_submission"] = {
+        "status": "submitted",
+        "submitted_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+    }
+    return jsonify({"message": "Plan submitted to Academic Advisor.", "plan": plan})
 
 
 @app.post("/advice")
